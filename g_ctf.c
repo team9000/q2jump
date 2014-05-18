@@ -853,24 +853,6 @@ qboolean CTFPickup_Flag(edict_t *ent, edict_t *other)
 		
 			if (other->client->pers.inventory[ITEM_INDEX(enemy_flag_item)]) {
 
-
-/*				gi.bprintf(PRINT_HIGH, "%s captured the %s flag in %1.1 seconds!\n",
-						other->client->pers.netname, CTFOtherTeamName(ctf_team),level.time-other->client->resp.ctf_flagsince);*/
-
-		apply_time(other,ent);
-/*		other->client->resp.got_time = true;
-
-		other->client->resp.item_timer = add_item_to_queue(other,other->client->resp.item_timer,other->client->resp.item_timer_penalty,other->client->pers.netname,enemy_flag_item->pickup_name);
-		if ((other->client->resp.item_timer<level_items.item_time) || (level_items.item_time==0))
-		{
-			level_items.jumps = other->client->resp.jumps;
-			level_items.item_time = other->client->resp.item_timer;
-			strcpy(level_items.item_owner,other->client->pers.netname);
-			strcpy(level_items.item_name,enemy_flag_item->pickup_name);
-			level_items.fastest_player = other;
-		}	
-*/
-
 				other->client->pers.inventory[ITEM_INDEX(enemy_flag_item)] = 0;
 
 				ctfgame.last_flag_capture = level.time;
@@ -1265,10 +1247,10 @@ void SetCTFStats(edict_t *ent)
 
 	
 
-	if (ent->client->resp.ctf_team==CTF_TEAM2 || (gametype->value==GAME_CTF && ent->client->resp.ctf_team==CTF_TEAM1))
-	{
-		ent->client->ps.stats[STAT_JUMP_REPLAY] = 0;
-		ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = 0;
+//	if (ent->client->resp.ctf_team==CTF_TEAM2 || (gametype->value==GAME_CTF && ent->client->resp.ctf_team==CTF_TEAM1))
+//	{
+//		ent->client->ps.stats[STAT_JUMP_REPLAY] = 0;
+//		ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = 0;
 		
 
 		// draxi
@@ -1283,11 +1265,11 @@ void SetCTFStats(edict_t *ent)
 		*/
 
 
-	}
-	else if (gametype->value!=GAME_CTF && ent->client->resp.ctf_team==CTF_TEAM1)
-	{
-		ent->client->ps.stats[STAT_JUMP_REPLAY] = 0;
-		ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = ent->client->resp.max_speed;
+//	}
+//	else if (gametype->value!=GAME_CTF && ent->client->resp.ctf_team==CTF_TEAM1)
+//	{
+//		ent->client->ps.stats[STAT_JUMP_REPLAY] = 0;
+//		ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = ent->client->resp.max_speed;
 		
 		// draxi
 		/* 
@@ -1296,20 +1278,21 @@ void SetCTFStats(edict_t *ent)
 		else
 			ent->client->ps.stats[STAT_JUMP_ANTIGLUE] = CONFIG_JUMP_ANTIGLUE_OFF;
 			*/
-	}
-	else
-	{
+//	}
+//	else
+//	{
 
+ent->client->ps.stats[STAT_HEALTH] = 0;
 		if (ent->client->resp.replaying)
 		{
 			ent->client->ps.stats[STAT_JUMP_REPLAY] = ent->client->resp.replaying;
-			ent->client->ps.stats[STAT_HEALTH] = 0;
+//			ent->client->ps.stats[STAT_HEALTH] = 0;
 			ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = 0;
 		}
 		else
 		{
 			ent->client->ps.stats[STAT_JUMP_REPLAY] = 0;
-			ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = 0;
+			ent->client->ps.stats[STAT_JUMP_SPEED_MAX] = ent->client->resp.max_speed;
 		}
 		
 	
@@ -1325,7 +1308,7 @@ void SetCTFStats(edict_t *ent)
 			ent->client->ps.stats[STAT_JUMP_ANTIGLUE] = CONFIG_JUMP_ANTIGLUE_OFF;
 		*/ 
 
-	}
+//	}
 
 
 
@@ -5709,6 +5692,8 @@ void UpdateVoteMaps(void)
 
 void GenerateVoteMaps(void)
 {
+	// team9000 SEEEEEEEED
+	srand (time(NULL));
 
 	qboolean done[3];
 	done[0] = done[1] = done[2] = 0;
@@ -5727,36 +5712,16 @@ void GenerateVoteMaps(void)
 		}
 		else
 		{
-			if (!nominated_map)
-			{
-				//if (gset_vars->maplist_times && gset_vars->voteseed>10 && !((rand() + 1) % 4))
-					//map1 = rand() % (gset_vars->voteseed);
-				//else
-					map1 = rand() % (votemapnum);
-				map1 = votemaplist[map1];
-			}
+			if (!nominated_map) map1 = rand() % maplist.nummaps;
 
-			do
-			{	
-				//if (gset_vars->maplist_times && gset_vars->voteseed>10 && !((rand() + 1) % 4))
-					//map2 = rand() % (gset_vars->voteseed);
-				//else
-				//	map2 = rand() % (votemapnum);
-				map2 = votemaplist[map2];
-			}
-			while (map2==map1);
+			do {	
+				map2 = rand() % maplist.nummaps;
+			} while( map2==map1 );
 
-			
-			do
-			{
-				if (gset_vars->maplist_times && rand()&1)
-					map3 = rand() % (gset_vars->voteseed);
-				else
-					map3 = rand() % (votemapnum);
-				map3 = votemaplist[map3];
-			} while ((map3==map1) || (map3==map2));
+			do {
+				map3 = rand() % maplist.nummaps;
+			} while ( map3==map1 || map3==map2 );
 
-			
 		}
 	}
 }

@@ -200,24 +200,6 @@ zbotcmd_t zbotCommands[] =
     &mset_vars->kill_delay,
   },
 
-
-
-
-
-  //draxi
-  { 
-	0,1,0,
-    "machinegun", 
-    CMDWHERE_CFGFILE | CMD_MSET, 
-    CMDTYPE_NUMBER,
-    &mset_vars->machinegun,
-  },
-  //
-  
-
-
-
-
   { 
 	0,1,0,
     "playtag", 
@@ -233,11 +215,18 @@ zbotcmd_t zbotCommands[] =
     &mset_vars->regen,
   },
   { 
-	0,1,0,
-    "rocket", 
+	0,0,0,
+    "finishitem", 
+    CMDWHERE_CFGFILE | CMD_MSET, 
+    CMDTYPE_STRING,
+    &mset_vars->finishitem,
+  },
+  { 
+	0,1,1,
+    "ammo", 
     CMDWHERE_CFGFILE | CMD_MSET, 
     CMDTYPE_NUMBER,
-    &mset_vars->rocket,
+    &mset_vars->ammo,
   },
   { 
 	0,1,0,
@@ -615,16 +604,6 @@ zbotcmd_t zbotCommands[] =
     &gset_vars->mset->kill_delay,
   },
 
-  // draxi
-  { 
-	0,1,0,
-    "gmachinegun", 
-    CMDWHERE_CFGFILE | CMD_GSET | CMD_GSETMAP, 
-    CMDTYPE_NUMBER,
-    &gset_vars->mset->machinegun,
-  },
-
-
   {						// hann
         0,1,1,					// hann
         "map_end_warn_sounds",			// hann
@@ -680,6 +659,13 @@ zbotcmd_t zbotCommands[] =
     CMDWHERE_CFGFILE | CMD_GSET, 
     CMDTYPE_STRING,
     &gset_vars->numberone_wav,
+  },
+  { 
+	0,0,0,
+    "finish_wav", 
+    CMDWHERE_CFGFILE | CMD_GSET, 
+    CMDTYPE_STRING,
+    &gset_vars->finish_wav,
   },
   { 
 	1,9,1,
@@ -766,11 +752,18 @@ zbotcmd_t zbotCommands[] =
     &gset_vars->respawn_sound,
   },
   { 
-	0,1,0,
-    "grocket", 
+	0,0,0,
+    "gfinishitem", 
+    CMDWHERE_CFGFILE | CMD_GSET | CMD_GSETMAP, 
+    CMDTYPE_STRING,
+    &gset_vars->mset->finishitem,
+  },
+  { 
+	0,1,1,
+    "gammo", 
     CMDWHERE_CFGFILE | CMD_GSET | CMD_GSETMAP, 
     CMDTYPE_NUMBER,
-    &gset_vars->mset->rocket,
+    &gset_vars->mset->ammo,
   },
   { 
 	0,1,1,
@@ -4289,59 +4282,53 @@ void apply_time(edict_t *other, edict_t *ent)
 	int diff = 0;
 
 	Stop_Recording(other);
-	if (((other->client->resp.item_timer_allow) || (other->client->resp.ctf_team==CTF_TEAM2)) || (gametype->value==GAME_CTF && other->client->resp.ctf_team==CTF_TEAM1))
+	
+	if(other->client->resp.finished) return;
+
+	//stop recording, setup for new one
+	if (other->client->resp.auto_record_on)
 	{
-	if (!other->client->resp.finished)
-	{
-		//stop recording, setup for new one
-		if (other->client->resp.auto_record_on)
-		{
-			autorecord_newtime(other);
-			if (other->client->resp.auto_recording)
-				autorecord_stop(other);			
-		}
-
-
-		other->client->resp.finished = true;
-		other->client->resp.score++;
-		other->client->resp.got_time = true;
-		
-
-		other->client->resp.item_timer = add_item_to_queue(other,other->client->resp.item_timer,other->client->resp.item_timer_penalty,other->client->pers.netname,ent->item->pickup_name);
-		if (((other->client->resp.item_timer+0.0001)<level_items.item_time) || (level_items.item_time==0))
-		{
-			level_items.jumps = other->client->resp.jumps;
-			level_items.item_time = other->client->resp.item_timer;
-			strcpy(level_items.item_owner,other->client->pers.netname);
-			strcpy(level_items.item_name,ent->item->pickup_name);
-			level_items.fastest_player = other;
-			Save_Current_Recording(other);
-			
-			//give them admin
-			if (((other->client->resp.item_timer+0.0001)<maplist.times[level.mapnum][0].time) || (!maplist.times[level.mapnum][0].time))
-			{
-				if (!Neuro_RedKey_Overide && map_added_time<5)
-				{
-					gi.bprintf(PRINT_HIGH,"%s has set a 1st place, adding 5 minutes extra time.\n",other->client->pers.netname);
-					map_added_time += 5;
-					Update_Added_Time();
-				}
-				else
-				{
-					gi.bprintf(PRINT_HIGH,"%s has set a 1st place.\n",other->client->pers.netname);
-				}
-			}
-
-		}	
+		autorecord_newtime(other);
+		if (other->client->resp.auto_recording)
+			autorecord_stop(other);			
 	}
-		if	(!other->client->resp.playtag)
+
+	other->client->resp.finished = true;
+	other->client->resp.score++;
+	other->client->resp.got_time = true;
+
+	other->client->resp.item_timer = add_item_to_queue(other,other->client->resp.item_timer,other->client->resp.item_timer_penalty,other->client->pers.netname,ent->item->pickup_name);
+	if (((other->client->resp.item_timer+0.0001)<level_items.item_time) || (level_items.item_time==0))
+	{
+		level_items.jumps = other->client->resp.jumps;
+		level_items.item_time = other->client->resp.item_timer;
+		strcpy(level_items.item_owner,other->client->pers.netname);
+		strcpy(level_items.item_name,ent->item->pickup_name);
+		level_items.fastest_player = other;
+		Save_Current_Recording(other);
+		
+		//give them admin
+		if (((other->client->resp.item_timer+0.0001)<maplist.times[level.mapnum][0].time) || (!maplist.times[level.mapnum][0].time))
 		{
-			if (!Neuro_RedKey_Overide)
-			if ((gset_vars->jetpack))
+			if (!Neuro_RedKey_Overide && map_added_time<5)
 			{
-				strcpy(item_name,"jetpack");
-				give_item(other,item_name);
+				gi.bprintf(PRINT_HIGH,"%s has set a 1st place, adding 5 minutes extra time.\n",other->client->pers.netname);
+				map_added_time += 5;
+				Update_Added_Time();
 			}
+			else
+			{
+				gi.bprintf(PRINT_HIGH,"%s has set a 1st place.\n",other->client->pers.netname);
+			}
+		}
+	}
+	if	(!other->client->resp.playtag)
+	{
+		if (!Neuro_RedKey_Overide)
+		if ((gset_vars->jetpack))
+		{
+			strcpy(item_name,"jetpack");
+			give_item(other,item_name);
 		}
 	}
 }
@@ -4374,66 +4361,6 @@ void Stop_Recording(edict_t *ent)
 	int index;
 	index = ent-g_edicts-1;
 	client_record[index].allow_record = false;
-}
-
-void		Save_Recording(edict_t *ent,int uid,int uid_1st)
-{
-	FILE	*f;
-	char	name[256];
-	char	new_name[256];
-	int index;
-	cvar_t	*port;
-	cvar_t	*tgame;
-	int i;
-
-	index = ent-g_edicts-1;
-	if (!client_record[index].current_frame)
-		return;
-	client_record[index].allow_record = false;
-
-	tgame = gi.cvar("game", "jump", 0);
-	port = gi.cvar("port", "27910", 0);
-	
-#ifdef ANIM_REPLAY
-	sprintf (name, "%s/jumpdemo/%s.dj2", tgame->string,level.mapname);
-#else
-	sprintf (name, "%s/jumpdemo/%s.dj1", tgame->string,level.mapname);
-#endif
-
-	//player exists in position 2
-	//they dont have a demo saved
-	//howver, if someone in 1st sets a 1st, we shouldnt save
-
-	//this dont work, fix at some point
-	/*
-	if (level_items.stored_item_times[1].uid>=0 && (uid!=uid_1st))
-	{
-		sprintf (new_name, "%s/jumpdemo/%s_%d.dj3", tgame->string,level.mapname,level_items.stored_item_times[1].uid);
-		f = fopen(name,"rb");
-		if (f)
-		{
-			fclose(f);
-		}
-		else
-		{
-			rename(name,new_name);
-		}
-
-	}
-*/
-
-
-	f = fopen (name, "wb");
-
-	if (!f)
-		return;
-
-	fwrite(client_record[index].data,sizeof(record_data),client_record[index].current_frame,f);
-	//now put it in local data
-	level_items.recorded_time_frames[0] = client_record[index].current_frame;
-	memcpy(level_items.recorded_time_data[0],client_record[index].data,sizeof(client_record[index].data));
-
-	fclose(f);
 }
 
 void Save_Individual_Recording(edict_t *ent)
@@ -4512,6 +4439,7 @@ void Record_Frame(edict_t *ent)
 	}
 }
 
+void upgradeReplays();
 void Cmd_Replay(edict_t *ent)
 {
 	int i;
@@ -4547,6 +4475,7 @@ void Cmd_Replay(edict_t *ent)
 	else
 	if (strcmp(temp,"list")==0)
 	{
+	//upgradeReplays();
 	Com_sprintf(txt,sizeof(txt),"No. Player               Time");
 	gi.cprintf (ent, PRINT_HIGH,"\n%s\n",HighAscii(txt));		
 		for (i=0;i<MAX_HIGHSCORES;i++)
@@ -4616,60 +4545,79 @@ void Cmd_Replay(edict_t *ent)
 
 }
 
-void Load_Recording(void)
+void upgradeReplays()
 {
-	//load recording using level.mapname
 	FILE	*f;
 	char	name[256];
-	int index;
+	char	temp[256];
 	cvar_t	*port;
 	cvar_t	*tgame;
 	int i;
 	long lSize;
-	qboolean loaded = false;
-
 	tgame = gi.cvar("game", "", 0);
 	port = gi.cvar("port", "", 0);
 
-	//multireplay code, look for dj3 first via uid of player at 0
-	if (level_items.stored_item_times[0].uid>=0)
+	for (i=0;i<maplist.nummaps;i++)
 	{
-		sprintf (name, "%s/jumpdemo/%s_%d.dj3", tgame->string,level.mapname,level_items.stored_item_times[0].uid);
-		f = fopen (name, "rb");
-		loaded = true;
+		read_top10_tourney_log(maplist.mapnames[i]);
+		int uid = level_items.stored_item_times[0].uid;
+		gi.dprintf ("Scanning %s %d\n", maplist.mapnames[i], uid); 
+		if(uid > 0) {
+			sprintf (name, "%s/jumpdemo/%s_%d.dj3", tgame->string,maplist.mapnames[i],uid);
+			f = fopen (name, "rb");
+			if(f) {
+				// already in new format
+				gi.dprintf ("Already Upgraded\n"); 
+				fclose(f);
+			} else {
+				qboolean oldFormat = false;
+				sprintf (name, "%s/jumpdemo/%s.dj2", tgame->string,maplist.mapnames[i]);
+				f = fopen (name, "rb");
+				if(!f) {
+					sprintf (name, "%s/jumpdemo/%s.dj1", tgame->string,maplist.mapnames[i]);
+					f = fopen (name, "rb");
+					oldFormat = true;
+					gi.dprintf ("Old Format\n"); 
+				}
+				if(f) {
+					fseek (f , 0 , SEEK_END);
+					lSize = ftell (f);
+					rewind (f);
+
+					int frames = lSize / sizeof(record_data);
+					
+					if(oldFormat) {
+						frames = lSize / (sizeof(record_data)-sizeof(int));
+						int j;
+						for(j=0; j < frames; j++) {
+							fread(&level_items.recorded_time_data[0][j],1,sizeof(vec3_t)*2,f);
+							level_items.recorded_time_data[0][j].frame = 0;
+						}
+					} else {
+						fread(level_items.recorded_time_data[0],1,lSize,f);
+					}
+					fclose(f);
+
+					gi.dprintf ("Writing\n"); 
+					sprintf (name, "%s/jumpdemo/%s_%d.dj3", tgame->string,maplist.mapnames[i],uid);
+					f = fopen (name, "wb");
+					gi.dprintf ("%s\n", name); 
+					if(f) {
+						fwrite(level_items.recorded_time_data[0],sizeof(record_data),frames,f);
+						fclose(f);
+						gi.dprintf ("Done\n"); 
+					}
+				}
+			}
+		}
+
+		sprintf (name, "%s/jumpdemo/%s.dj2", tgame->string,maplist.mapnames[i]);
+		remove(name);
+		sprintf (name, "%s/jumpdemo/%s.dj1", tgame->string,maplist.mapnames[i]);
+		remove(name);
 	}
-	if (!loaded || !f)
-	{
-		#ifdef ANIM_REPLAY
-			sprintf (name, "%s/jumpdemo/%s.dj2", tgame->string,level.mapname);
-		#else
-			sprintf (name, "%s/jumpdemo/%s.dj1", tgame->string,level.mapname);
-		#endif
-		f = fopen (name, "rb");
-	}
-
-	for (i=0;i<MAX_HIGHSCORES+1;i++)
-	{
-		level_items.recorded_time_frames[i] = 0;
-		level_items.recorded_time_uid[i] = -1;
-	}
-
-	if (!f)
-	{
-		level_items.recorded_time_frames[0] = 0;
-		return;
-	}
-
-	fseek (f , 0 , SEEK_END);
-	lSize = ftell (f);
-	rewind (f);
-
-	fread(level_items.recorded_time_data[0],1,lSize,f);
-	//now put it in local data
-	level_items.recorded_time_frames[0] = lSize / sizeof(record_data);
-
-	fclose(f);
-
+	
+	//exit(0);
 }
 
 void Load_Individual_Recording(int num,int uid)
@@ -4683,12 +4631,14 @@ void Load_Individual_Recording(int num,int uid)
 	int i;
 	long lSize;
 
-	if (num<1 || num>=MAX_HIGHSCORES)
+	if (num<0 || num>=MAX_HIGHSCORES)
 		return;
-	if (uid<0)
-		return;
+
 	level_items.recorded_time_frames[num] = 0;
 	level_items.recorded_time_uid[num] = -1;
+
+	if (uid<0)
+		return;
 	tgame = gi.cvar("game", "", 0);
 	port = gi.cvar("port", "", 0);
 	sprintf (name, "%s/jumpdemo/%s_%d.dj3", tgame->string,level.mapname,uid);
@@ -5444,12 +5394,6 @@ void delete_nottop10(edict_t *ent)
 						level_items.recorded_time_frames[i] = 0;
 						level_items.recorded_time_uid[i] = -1;
 					}
-		#ifdef ANIM_REPLAY
-					sprintf (name, "%s/jumpdemo/%s.dj2", tgame->string,level.mapname);
-		#else
-					sprintf (name, "%s/jumpdemo/%s.dj1", tgame->string,level.mapname);
-		#endif
-					remove(name);	
 					sprintf (name, "%s/jumpdemo/%s_%d.dj3", tgame->string,level.mapname,remuid);
 					remove(name);	
 
@@ -5457,8 +5401,7 @@ void delete_nottop10(edict_t *ent)
 
 				write_tourney_file(level.mapname,level.mapnum);
 
-				Load_Recording();
-				for (i=1;i<MAX_HIGHSCORES;i++)
+				for (i=0;i<MAX_HIGHSCORES;i++)
 				{
 					Load_Individual_Recording(i,level_items.stored_item_times[i].uid);
 				}
@@ -6841,7 +6784,8 @@ void SetDefaultValues(void)
 	int i;
 	strcpy(gset_vars->model_store,"models/monsters/commandr/head/tris.md2");
 	strcpy(gset_vars->admin_model,"guard");
-	strcpy(gset_vars->numberone_wav,"numberone.wav");
+	strcpy(gset_vars->numberone_wav,"numberone");
+	strcpy(gset_vars->finish_wav,"jump");
 	strcpy(gset_vars->mset->edited_by,"noone");
 	gset_vars->debug =0;
 	gset_vars->addtime_announce = 1;
@@ -6904,8 +6848,8 @@ void SetDefaultValues(void)
 	gset_vars->mset->gravity = 800;
 	gset_vars->mset->playtag = 0;
 	gset_vars->mset->cmsg = 0;
-	gset_vars->mset->rocket = 0;
-	gset_vars->mset->machinegun = 0; // draxi
+	strcpy(gset_vars->mset->finishitem,"");
+	gset_vars->mset->ammo = 1;
 	gset_vars->mset->tourney = 0;
 	gset_vars->mset->blaster = 1;
 	gset_vars->mset->damage = 1;
@@ -6997,6 +6941,30 @@ void SetDefaultValues(void)
 		if (zbotCommands[i].cmdwhere & CMD_ASET)
 		{
 			num_aset_commands++;
+		}
+	}
+}
+
+
+void attempt_win(edict_t *other, edict_t *ent) {
+	char* classname = ent->item->classname;
+	if(!classname || Q_stricmp(classname,"")==0) return;
+	if(
+		(Q_stricmp(mset_vars->finishitem,"")==0 && Q_stricmp(classname,"weapon_railgun")==0)
+		|| (Q_stricmp(mset_vars->finishitem,classname)==0)
+	) {
+		if ((other->client->resp.ctf_team==CTF_TEAM1)) {
+			// notify easy clients of their completion time
+			if (other->client->resp.item_timer_allow) {
+				if (other->client->resp.item_timer_penalty>=1)
+					gi.cprintf(other,PRINT_HIGH,"You would have finished in %3.1f secs with %3.1f secs antiglue penalty.\n",other->client->resp.item_timer,(other->client->resp.item_timer_penalty/10));
+				else
+					gi.cprintf(other,PRINT_HIGH,"You would have finished in %3.1f seconds.\n",other->client->resp.item_timer);
+				other->client->resp.item_timer_allow = false;
+			}
+		}
+		if (other->client->resp.ctf_team==CTF_TEAM2) {
+			apply_time(other,ent);
 		}
 	}
 }
@@ -7977,8 +7945,7 @@ void remtime(edict_t *ent)
 
 		write_tourney_file(level.mapname,level.mapnum);
 
-		Load_Recording();
-		for (i=1;i<MAX_HIGHSCORES;i++)
+		for (i=0;i<MAX_HIGHSCORES;i++)
 		{
 			Load_Individual_Recording(i,level_items.stored_item_times[i].uid);
 		}
@@ -9543,12 +9510,12 @@ float add_item_to_queue(edict_t *ent, float item_time,float item_time_penalty,ch
 		//need to sort the demo recording code completely
 		if (strcmp(temp_owner,level_items.stored_item_times[0].owner)==0)
 		if (strcmp(temp_name,level_items.stored_item_times[0].name)==0)
-			if (level_items.stored_item_times[0].time==item_time)
+		if (level_items.stored_item_times[0].time==item_time)
 		{
-			Save_Recording(ent,uid,uid_1st);
+//			Save_Recording(ent,uid,uid_1st);
 			if (gset_vars->playsound	)
 			{
-				gi.positioned_sound (world->s.origin, world, CHAN_AUTO | CHAN_RELIABLE, gi.soundindex(gset_vars->numberone_wav), 1, ATTN_NONE, 0);
+				gi.positioned_sound (world->s.origin, world, CHAN_AUTO | CHAN_RELIABLE, gi.soundindex(va("%s.wav",gset_vars->numberone_wav)), 1, ATTN_NONE, 0);
 				played_wav = false;
 			}
 		}
@@ -9564,14 +9531,12 @@ float add_item_to_queue(edict_t *ent, float item_time,float item_time_penalty,ch
 			WriteTimes(level.mapname);*/
 			
 	}
-	if (played_wav)
-	{
-		if (gset_vars->numsoundwavs>1)
-		{
-			gi.positioned_sound (world->s.origin, world, CHAN_AUTO | CHAN_RELIABLE, gi.soundindex(va("jump%d.wav",rand() % gset_vars->numsoundwavs)), 1, ATTN_NONE, 0);
+	if (played_wav) {
+		if (gset_vars->numsoundwavs>1) {
+			gi.positioned_sound (world->s.origin, world, CHAN_AUTO | CHAN_RELIABLE, gi.soundindex(va("%s%d.wav",gset_vars->finish_wav,rand() % gset_vars->numsoundwavs)), 1, ATTN_NONE, 0);
+		} else {
+			gi.positioned_sound (world->s.origin, world, CHAN_AUTO | CHAN_RELIABLE, gi.soundindex(va("%s.wav",gset_vars->finish_wav)), 1, ATTN_NONE, 0);
 		}
-		else
-		gi.positioned_sound (world->s.origin, world, CHAN_AUTO | CHAN_RELIABLE, gi.soundindex("jump.wav"), 1, ATTN_NONE, 0);
 	}	
 	return item_time;
 }

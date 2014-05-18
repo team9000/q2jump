@@ -553,15 +553,6 @@ void SP_trigger_hurt (edict_t *self, edict_t *other, edict_t *ent)
 	if (self->spawnflags & 2)
 		self->use = hurt_use;
 
-
-/*
-	//draxi: Complete map without using a weapon as completion
-	if (self->dmg==2 && other->client)
-	{
-n		apply_time(other, ent);
-	}
-*/
-
 	gi.linkentity (self);
 }
 

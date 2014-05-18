@@ -1,7 +1,7 @@
 //defines
 #define MAX_USERS 6144
 #define MAX_HIGHSCORES 15
-#define CTF_VERSION_S		"1.07d"
+#define CTF_VERSION_S		"1.07d-01-team9000"
 #define		HOOK_READY	0
 #define		HOOK_OUT	1
 #define		HOOK_ON		2
@@ -280,7 +280,7 @@ void		replay_frame(edict_t *ent);
 void		Cmd_Replay(edict_t *ent);
 void		Record_Frame(edict_t *ent);
 
-void		Save_Recording(edict_t *ent,int uid,int uid_1st);
+//void		Save_Recording(edict_t *ent,int uid,int uid_1st);
 
 void		Stop_Recording(edict_t *ent);
 void		Start_Recording(edict_t *ent);
@@ -420,8 +420,8 @@ typedef struct
 	unsigned int antiglue_allow1st;
 	unsigned int target_glow;
 	unsigned int tourney;
-	unsigned int rocket;
-	unsigned int machinegun;
+	char finishitem[256];
+	unsigned int ammo;
 	unsigned int cmsg;
 	unsigned int playtag;
 	char edited_by[256];
@@ -455,6 +455,7 @@ typedef struct
 	int debug;
 	char model_store[256];
 	char numberone_wav[256];
+	char finish_wav[256];
 	int	overtimerandom;
 	int overtimelimit;
 	int votingtime;

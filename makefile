@@ -13,9 +13,10 @@ CC=gcc
 BASE_CFLAGS=-Dstricmp=strcasecmp
 
 #use these cflags to optimize it
-CFLAGS=$(BASE_CFLAGS) -march=i486 -O6 -ffast-math -funroll-loops \
+CFLAGS=$(BASE_CFLAGS) -m32 -march=i486 -O6 -ffast-math -funroll-loops \
 	-fomit-frame-pointer -fexpensive-optimizations -falign-loops=2 \
-	-falign-jumps=2 -falign-functions=2
+	-falign-jumps=2 -falign-functions=2 \
+	-Wno-unused-result -Wno-format
 #use these when debugging 
 #CFLAGS=$(BASE_CFLAGS) -g
 

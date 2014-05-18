@@ -1081,6 +1081,7 @@ void ClientEndServerFrame (edict_t *ent)
 
 	temp_velocity[0] = ent->velocity[0];
 	temp_velocity[1] = ent->velocity[1];
+	temp_velocity[2] = 0;
 	cur_speed = (int)fabs(VectorLength(temp_velocity));
 		ent->client->resp.cur_speed  = cur_speed;
 		if (cur_speed>ent->client->resp.max_speed)

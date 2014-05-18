@@ -865,10 +865,9 @@ debug_log(text);
 
 	open_tourney_file(level.mapname,false);
 	Update_Highscores(10);
-	Load_Recording();
 
 	SetSpinnyThing();
-	for (i=1;i<MAX_HIGHSCORES;i++)
+	for (i=0;i<MAX_HIGHSCORES;i++)
 		Load_Individual_Recording(i,level_items.stored_item_times[i].uid);
 
 	//backup to dj3 demo
@@ -1189,8 +1188,10 @@ void SP_worldspawn (edict_t *ent)
 	gi.soundindex ("infantry/inflies1.wav");
 
 	//jumpmod
-	gi.soundindex (gset_vars->numberone_wav);	// jump
-	gi.soundindex ("jump.wav");	// jump
+	sprintf(temp,"%s.wav",gset_vars->numberone_wav);
+	gi.soundindex(temp);
+	sprintf(temp,"%s.wav",gset_vars->finish_wav);
+	gi.soundindex(temp);
 	gi.soundindex ("1_minute.wav");	// jump
 	gi.soundindex ("5_minute.wav");	// jump
 //	gi.soundindex ("jumpyes.wav");	// jump
@@ -1200,7 +1201,7 @@ void SP_worldspawn (edict_t *ent)
 	{
 		for (i=1;i<gset_vars->numsoundwavs;i++)
 		{
-			sprintf(temp,"jump%i.wav",i);
+			sprintf(temp,"%s%i.wav",gset_vars->finish_wav,i);
 			gi.soundindex (temp);	// jump
 		}
 	}

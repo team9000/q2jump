@@ -40,17 +40,17 @@ gitem_armor_t jacketarmor_info	= { 25,  50, .30, .00, ARMOR_JACKET};
 gitem_armor_t combatarmor_info	= { 50, 100, .60, .30, ARMOR_COMBAT};
 gitem_armor_t bodyarmor_info	= {100, 200, .80, .60, ARMOR_BODY};
 
-static int	jacket_armor_index;
-static int	combat_armor_index;
-static int	body_armor_index;
-static int	power_screen_index;
-static int	power_shield_index;
+int	jacket_armor_index;
+int	combat_armor_index;
+int	body_armor_index;
+int	power_screen_index;
+int	power_shield_index;
 
 #define HEALTH_IGNORE_MAX	1
 #define HEALTH_TIMED		2
 
 void Use_Quad (edict_t *ent, gitem_t *item);
-static int	quad_drop_timeout_hack;
+int	quad_drop_timeout_hack;
 
 //======================================================================
 
@@ -255,12 +255,6 @@ qboolean Pickup_Powerup (edict_t *ent, edict_t *other)
 			ent->item->use (other, ent->item);
 		}
 	}
-
-	//pooy
-
-	
-	if (Q_stricmp(ent->item->pickup_name, "Jetpack") != 0)
-		apply_time(other,ent);
 
 	return true;
 }
@@ -549,9 +543,6 @@ qboolean Pickup_Key (edict_t *ent, edict_t *other)
 		}
 		return true;
 	}
-
-	//pooy
-	apply_time(other,ent);
 
 	other->client->pers.inventory[ITEM_INDEX(ent->item)]++;
 	return true;
@@ -891,9 +882,6 @@ qboolean Pickup_PowerArmor (edict_t *ent, edict_t *other)
 			ent->item->use (other, ent->item);
 	}
 
-	//pooy
-	apply_time(other,ent);
-
 	return true;
 }
 
@@ -924,6 +912,9 @@ void Touch_Item (edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf
 
 	if (CTFMatchSetup())
 		return; // can't pick stuff up right now
+	
+	// JUMPMOD
+	attempt_win(other,ent);
 
 	taken = ent->item->pickup(ent, other);
 
@@ -2826,7 +2817,7 @@ void SP_jump_score (edict_t *ent)
 	next_ent->owner = ent;
 
 	gi.linkentity (next_ent);
-
+/*
 	next_ent = G_Spawn();
 
 	next_ent->classname = "jump_score_digit6";
@@ -2847,6 +2838,7 @@ void SP_jump_score (edict_t *ent)
 	next_ent->owner = ent;
 
 	gi.linkentity (next_ent);
+*/
 }
 
 
@@ -3002,7 +2994,7 @@ void SP_jump_time (edict_t *ent)
 	next_ent->owner = ent;
 
 	gi.linkentity (next_ent);
-
+/*
 	next_ent = G_Spawn();
 
 	next_ent->classname = "jump_time_digit6";
@@ -3023,6 +3015,7 @@ void SP_jump_time (edict_t *ent)
 	next_ent->owner = ent;
 
 	gi.linkentity (next_ent);
+*/
 }
 
 

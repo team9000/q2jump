@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "m_player.h"
 
 
-static qboolean	is_quad;
+qboolean	is_quad;
 static byte		is_silenced;
 
 
@@ -126,21 +126,6 @@ qboolean Pickup_Weapon (edict_t *ent, edict_t *other)
 	if (gametype->value==GAME_CTF)
 		return false;
 
-	 //pooy
-	if (!mset_vars->rocket)
-	if ((other->client->resp.ctf_team==CTF_TEAM1))
-	{
-		//notify client what time they got ere
-		if (other->client->resp.item_timer_allow)
-		{
-			if (other->client->resp.item_timer_penalty>=1)
-				gi.cprintf(other,PRINT_HIGH,"You would have got this weapon in %3.1f secs with %3.1f secs antiglue penalty.\n",other->client->resp.item_timer,(other->client->resp.item_timer_penalty/10));
-			else
-				gi.cprintf(other,PRINT_HIGH,"You would have got this weapon in %3.1f seconds.\n",other->client->resp.item_timer);
-			other->client->resp.item_timer_allow = false;
-		}
-		return false;
-	}
 	if ( ( ((int)(dmflags->value) & DF_WEAPONS_STAY) || coop->value) 
 		&& other->client->pers.inventory[index])
 	{
@@ -165,15 +150,10 @@ qboolean Pickup_Weapon (edict_t *ent, edict_t *other)
 	{
 		// give them some ammo with it
 		ammo = FindItem (ent->item->ammo);
-		if (mset_vars->rocket)
+		if ( mset_vars->ammo || (int)dmflags->value & DF_INFINITE_AMMO )
 			Add_Ammo (other, ammo, 1000);
 		else
-		{
-			if ( (int)dmflags->value & DF_INFINITE_AMMO )
-				Add_Ammo (other, ammo, 1000);
-			else
-				Add_Ammo (other, ammo, ammo->quantity);
-		}
+			Add_Ammo (other, ammo, ammo->quantity);
 
 		if (! (ent->spawnflags & DROPPED_PLAYER_ITEM) )
 		{
@@ -186,53 +166,6 @@ qboolean Pickup_Weapon (edict_t *ent, edict_t *other)
 			}
 			if (coop->value)
 				ent->flags |= FL_RESPAWN;
-		}
-	}
-
-	//pooy
-
-	if (other->client->resp.ctf_team==CTF_TEAM2)
-	{
-
-	//gi.bprintf(PRINT_HIGH,"%d %d %d pickup\n",other->client->ps.pmove.origin[0],other->client->ps.pmove.origin[1],other->client->ps.pmove.origin[2]);
-	//gi.bprintf(PRINT_HIGH,"%d %d %d pickup old\n",other->client->old_pmove.origin[0],other->client->old_pmove.origin[1],other->client->old_pmove.origin[2]);
-	//gi.bprintf(PRINT_HIGH,"%f %f %f pickup old_origin\n",other->s.old_origin[0]*8,other->s.old_origin[1]*8,other->s.old_origin[2]*8);
-	//gi.bprintf(PRINT_HIGH,"%f %f %f pickup origin\n",other->s.origin[0]*8,other->s.origin[1]*8,other->s.origin[2]*8);
-		if (!mset_vars->rocket && !mset_vars->machinegun)
-		{
-			apply_time(other,ent);
-		}
-
-		if (mset_vars->rocket && !mset_vars->machinegun && Q_stricmp(ent->item->pickup_name,"Rocket Launcher")==0)
-		{
-		}
-		else if (mset_vars->rocket && !mset_vars->machinegun && Q_stricmp(ent->item->pickup_name,"Grenade Launcher")==0)
-		{
-		}
-		else if (mset_vars->machinegun && mset_vars->rocket && Q_stricmp(ent->item->pickup_name,"Rocket Launcher")==0)
-		{
-		}
-		else if (mset_vars->machinegun && mset_vars->rocket && Q_stricmp(ent->item->pickup_name,"Grenade Launcher")==0)
-		{
-		}
-
-
-		//draxi:	Added a mset variable machinegun, so you can set it to 1, and players have to pick up a machinegun
-		//			before they can complete the map.
-		else if (mset_vars->machinegun && Q_stricmp(ent->item->pickup_name,"Machinegun")==0)
-		{	
-			//gi.cprintf(other,PRINT_HIGH,"Machineguntime = %3.1f seconds.\n",other->client->resp.item_timer+0.0001);
-		}
-		else if (mset_vars->machinegun && Q_stricmp(ent->item->pickup_name,"Machinegun")!=0 && !other->client->pers.inventory[ITEM_INDEX(FindItem("machinegun"))])
-		{
-			gi.cprintf(other,PRINT_HIGH,"You need to pick the Machinegun up first!\n");
-			return false;
-		}
-	
-
-		else
-		{
-			apply_time(other,ent);
 		}
 	}
 
@@ -656,7 +589,7 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 	speed = GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER);
 	fire_grenade2 (ent, start, forward, damage, speed, timer, radius, held);
 
-	if (!mset_vars->rocket)
+	if (!mset_vars->ammo)
 	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
 		ent->client->pers.inventory[ent->client->ammo_index]--;
 
@@ -805,14 +738,6 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 
 	radius = damage+40;
 
-
-	//draxi
-	if (mset_vars->machinegun && !mset_vars->rocket){
-		return;
-	}
-
-
-
 	if (is_quad)
 		damage *= 4;
 
@@ -845,7 +770,7 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 
-	if (!mset_vars->rocket)
+	if (!mset_vars->ammo)
 	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
 		ent->client->pers.inventory[ent->client->ammo_index]--;
 }
@@ -877,12 +802,6 @@ void Weapon_RocketLauncher_Fire (edict_t *ent)
 	damage = 100 + (int)(random() * 20.0);
 	radius_damage = 120;
 	damage_radius = 120;
-
-	//draxi
-	if (mset_vars->machinegun && !mset_vars->rocket){
-		return;
-	}
-
 
 	if (is_quad)
 	{
@@ -918,7 +837,7 @@ void Weapon_RocketLauncher_Fire (edict_t *ent)
 
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 
-	if (!mset_vars->rocket)
+	if (!mset_vars->ammo)
 	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
 		ent->client->pers.inventory[ent->client->ammo_index]--;
 }
@@ -996,13 +915,6 @@ void Weapon_HyperBlaster_Fire (edict_t *ent)
 	vec3_t	offset;
 	int		effect;
 	int		damage;
-
-
-	//draxi
-	if (mset_vars->machinegun && (ent->client->resp.ctf_team==CTF_TEAM2)){
-		return;
-	}
-
 
 	ent->client->weapon_sound = gi.soundindex("weapons/hyprbl1a.wav");
 
@@ -1092,13 +1004,6 @@ void Machinegun_Fire (edict_t *ent)
 	int			damage = 8;
 	int			kick = 2;
 	vec3_t		offset;
-
-
-	//draxi
-	if (mset_vars->machinegun){
-		return;
-	}
-
 
 	if (!(ent->client->buttons & BUTTON_ATTACK))
 	{
@@ -1196,11 +1101,6 @@ void Chaingun_Fire (edict_t *ent)
 	vec3_t		offset;
 	int			damage;
 	int			kick = 2;
-
-	//draxi
-	if (mset_vars->machinegun && (ent->client->resp.ctf_team==CTF_TEAM2)){
-		return;
-	}
 
 	if (deathmatch->value)
 		damage = 6;
@@ -1338,13 +1238,6 @@ void weapon_shotgun_fire (edict_t *ent)
 	int			damage = 4;
 	int			kick = 8;
 
-
-	//draxi
-	if (mset_vars->machinegun && (ent->client->resp.ctf_team==CTF_TEAM2)){
-		return;
-	}
-
-
 	if (ent->client->ps.gunframe == 9)
 	{
 		ent->client->ps.gunframe++;
@@ -1401,11 +1294,6 @@ void weapon_supershotgun_fire (edict_t *ent)
 	vec3_t		v;
 	int			damage = 6;
 	int			kick = 12;
-
-	//draxi
-	if (mset_vars->machinegun && (ent->client->resp.ctf_team==CTF_TEAM2)){
-		return;
-	}
 
 	AngleVectors (ent->client->v_angle, forward, right, NULL);
 
@@ -1471,12 +1359,6 @@ void weapon_railgun_fire (edict_t *ent)
 	int			damage;
 	int			kick;
 
-
-	//draxi
-	if (mset_vars->machinegun && (ent->client->resp.ctf_team==CTF_TEAM2)){
-		return;
-	}
-
 	if (deathmatch->value)
 	{	// normal damage is too extreme in dm
 		damage = 100;
@@ -1513,8 +1395,9 @@ void weapon_railgun_fire (edict_t *ent)
 	ent->client->ps.gunframe++;
 	PlayerNoise(ent, start, PNOISE_WEAPON);
 
-	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
-		ent->client->pers.inventory[ent->client->ammo_index]--;
+	// unlimited ammo for railgun! always!
+	//if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
+	//	ent->client->pers.inventory[ent->client->ammo_index]--;
 }
 
 
@@ -1541,11 +1424,6 @@ void weapon_bfg_fire (edict_t *ent)
 	vec3_t	forward, right;
 	int		damage;
 	float	damage_radius = 1000;
-
-	//draxi
-	if (mset_vars->machinegun && (ent->client->resp.ctf_team==CTF_TEAM2)){
-		return;
-	}
 
 	if (deathmatch->value)
 		damage = 200;
